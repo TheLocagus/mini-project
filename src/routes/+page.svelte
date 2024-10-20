@@ -1,40 +1,15 @@
 <script lang="ts">
+	import { untrack } from 'svelte';
+	import { Paint } from '../classes/Paint/Paint.svelte';
+
 	let canvasElement: HTMLCanvasElement;
-	let clicked = false;
+	let paint: Paint;
 
-	interface Coordinates {
-		x: number | undefined;
-		y: number | undefined;
-	}
-
-	const initValues: Coordinates = {
-		x: undefined,
-		y: undefined
-	};
-
-	const draw = (e: MouseEvent) => {
-		if (!initValues.x || !initValues.y) return;
-		const newX = e.offsetX;
-		const newY = e.offsetY;
-
-		const ctx = canvasElement.getContext('2d');
-		if (!ctx) return;
-
-		ctx.moveTo(initValues.x, initValues.y);
-		ctx.lineTo(newX, newY);
-		ctx.stroke();
-
-		initValues.x = newX;
-		initValues.y = newY;
-	};
-
-	const reset = () => {
-		clicked = false;
-		initValues.x = undefined;
-		initValues.y = undefined;
-	};
-
-	$effect(() => {});
+	$effect(() => {
+		if (canvasElement) {
+			paint = new Paint(canvasElement);
+		}
+	});
 </script>
 
 <h1>Mini paint by Burtek</h1>
@@ -44,15 +19,25 @@
 	width="1200"
 	height="800"
 	style="border:1px solid deeppink"
-	onmousedown={(e) => {
-		clicked = true;
-		initValues.x = e.offsetX;
-		initValues.y = e.offsetY;
-	}}
-	onmouseup={() => reset()}
+	onmousedown={(e) => paint.initDraw(e.offsetX, e.offsetY)}
+	onmouseup={() => paint.reset()}
 	onmousemove={(e) => {
-		if (clicked) draw(e);
+		if (paint.clicked) paint.draw(e.offsetX, e.offsetY);
 	}}
-	onmouseleave={() => reset()}
+	onmouseleave={() => paint.reset()}
+	ontouchstart={(e) => {
+		const { clientX, clientY } = e.touches[0];
+		paint.initDraw(clientX - canvasElement.offsetLeft, clientY - canvasElement.offsetTop);
+	}}
+	ontouchmove={(e) => {
+		e.preventDefault();
+
+		const { clientX, clientY } = e.touches[0];
+		if (paint.clicked)
+			paint.draw(clientX - canvasElement.offsetLeft, clientY - canvasElement.offsetTop);
+	}}
+	ontouchend={() => paint.reset()}
+	ontouchcancelcapture={() => paint.reset()}
 ></canvas>
-<!-- test -->
+
+<!-- @TODO: mobile actions to improve -->
