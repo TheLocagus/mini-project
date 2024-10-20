@@ -1,61 +1,57 @@
 <script lang="ts">
-    let clicked = $state(false);
-    let incrementIdPart = 0;
-    let svgElement: SVGElement;
-    const svgNS = "http://www.w3.org/2000/svg";
+	let canvasElement: HTMLCanvasElement;
+	let clicked = false;
 
+	interface Coordinates {
+		x: number | undefined;
+		y: number | undefined;
+	}
 
-    const draw = (e: MouseEvent) => {
-        const x = e.offsetX.toString();
-        const y = e.offsetY.toString();
+	const initValues: Coordinates = {
+		x: undefined,
+		y: undefined
+	};
 
-        if(clicked){
-            const g = document.querySelector(`#id-${incrementIdPart}`);
-            const rect = document.createElementNS(svgNS, 'rect');
-            rect.setAttribute('width', '3')
-            rect.setAttribute('height', '3')
-            rect.setAttribute('x', x)
-            rect.setAttribute('y', y)
-            rect.setAttribute('fill', 'deeppink')
-            g?.appendChild(rect)
+	const draw = (e: MouseEvent) => {
+		if (!initValues.x || !initValues.y) return;
+		const newX = e.offsetX;
+		const newY = e.offsetY;
 
-        }
-    }
+		const ctx = canvasElement.getContext('2d');
+		if (!ctx) return;
 
-    $effect(() => {
-        if(clicked){
-            incrementIdPart += incrementIdPart + 1;
+		ctx.moveTo(initValues.x, initValues.y);
+		ctx.lineTo(newX, newY);
+		ctx.stroke();
 
-            const g = document.createElementNS(svgNS, 'g');
-            g.setAttribute('id', `id-${incrementIdPart}`)
-            svgElement.appendChild(g);
+		initValues.x = newX;
+		initValues.y = newY;
+	};
 
-        }
-        if(!clicked){
-            console.log(svgElement)
-        }
-    })
-    
+	const reset = () => {
+		clicked = false;
+		initValues.x = undefined;
+		initValues.y = undefined;
+	};
+
+	$effect(() => {});
 </script>
 
 <h1>Mini paint by Burtek</h1>
-<!-- svelte-ignore a11y_no_static_element_interactions -->
-<svg height="500" width="1000" xmlns="http://www.w3.org/2000/svg" 
-    onmousemove={(e) => draw(e)} 
-    onmousedown={() => clicked = true} 
-    onmouseup={() => clicked = false} 
-    onmouseleave={() => clicked = false}
-    bind:this={svgElement}
->
-    <rect x="0" y="0" width="100%" height="100%" stroke="violet" stroke-width="8px" fill="white" />
-   
-</svg>
-  
-
-
-
-<style>
-    /* .wrapper {
-        border: 2px double violet;
-    } */
-</style>
+<canvas
+	bind:this={canvasElement}
+	id="paint"
+	width="1200"
+	height="800"
+	style="border:1px solid deeppink"
+	onmousedown={(e) => {
+		clicked = true;
+		initValues.x = e.offsetX;
+		initValues.y = e.offsetY;
+	}}
+	onmouseup={() => reset()}
+	onmousemove={(e) => {
+		if (clicked) draw(e);
+	}}
+	onmouseleave={() => reset()}
+></canvas>
